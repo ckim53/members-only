@@ -1,0 +1,9 @@
+<h1>Start a Membership for <%= username %></h1>
+<% if (fail) { %> <div class="error">Incorrect Passcode</div> <% } %>
+<form method="POST" action="/membership">
+    <input name="username" value=<%= username%> hidden></label>
+    <label for="membership-secret" >Secret Passcode: </label>
+    <input type="password" name="membershipSecret" required>
+    <button type="submit">Submit</button>
+</form>
+<button onclick="window.location.href='/'">No thanks</button>
