@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 app.get("/", async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT m.title, m.text, m.time, u.username AS author
+      `SELECT m.id, m.title, m.text, m.time, u.username AS author
       FROM messages m
       JOIN authors a ON m.id = a.message_id
       JOIN users u ON a.author_id = u.id`
@@ -57,6 +57,17 @@ app.get("/", async (req, res) => {
       ? rows
       : rows.map((m) => ({ title: m.title, text: m.text }));
     res.render("index", { messages: display });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post("/messages/:id/delete", async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    await pool.query("DELETE FROM messages WHERE id = $1", [id]);
+    req.flash("success", "Message deleted.");
+    res.redirect("/");
   } catch (err) {
     next(err);
   }
@@ -101,9 +112,10 @@ app.post(
     }
     try {
       const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      const isAdmin = req.body.isAdmin === "true";
       await pool.query(
-        "INSERT INTO users (username, password, membership) VALUES ($1, $2, false)",
-        [req.body.username, hashedPassword]
+        "INSERT INTO users (username, password, admin) VALUES ($1, $2, $3)",
+        [req.body.username, hashedPassword, isAdmin]
       );
       res.render("membership-form", { username: req.body.username, fail: "" });
     } catch (err) {
@@ -117,7 +129,7 @@ app.get("membership", (req, res) => {
 });
 
 app.post("/membership", async (req, res) => {
-  if (req.body.membershipSecret == "ilovecheese") {
+  if (req.body.membershipSecret == process.env.MEMBERSHIP_PASSCODE) {
     await pool.query(
       "UPDATE users SET membership = true WHERE username LIKE $1",
       [req.body.username]
@@ -177,7 +189,6 @@ app.get("/new-message", (req, res) => {
 app.post("/new-message", async (req, res) => {
   const { title, text } = req.body;
   try {
-    console.log("querying now...");
     await pool.query(
       `WITH new_msg AS (INSERT INTO messages (title, text) 
     VALUES ($1, $2) RETURNING id) 
@@ -202,11 +213,10 @@ passport.deserializeUser(async (id, done) => {
     const { rows } = await pool.query("SELECT * FROM users WHERE id = $1", [
       id,
     ]);
-    const user = rows[0];
-
-    done(null, user);
+    if (!rows.length) return done(null, false); 
+    return done(null, rows[0]);
   } catch (err) {
-    done(err);
+    return done(err);
   }
 });
 

@@ -15,11 +15,25 @@
     <% } else { %>
     <a href="/log-in">Log In</a> |
     <a href="/sign-up">Sign Up</a>
-    <% } %> <% if (messages.length) { %> <% messages.forEach(msg => { %>
-    <h2><%= msg.title %></h2>
+    <% } %>
+    <h2>Messages from Members</h2>
+    <% if (messages.length) { %> <% messages.forEach(msg => { %>
+    <h3><%= msg.title %></h3>
     <p><%= msg.text %></p>
-    <% if (currentUser) { %>
-    <small>By <%= msg.author %> on <%= msg.time %></small>
-    <% } %> <% }) }%>
+
+    <% if (currentUser && currentUser.membership) { %>
+    <h5>By <%= msg.author %> on <%= msg.time %></h5>
+
+    <% if (currentUser && currentUser.admin) { %>
+    <form
+      action="/messages/<%= msg.id %>/delete"
+      method="POST"
+      style="display: inline"
+    >
+      <button type="submit">Delete</button>
+    </form>
+    <% } %> <% } %> <% }) %> <% } else {%>
+    <p>No messages yet.</p>
+    <%}%>
   </body>
 </html>
