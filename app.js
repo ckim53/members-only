@@ -45,7 +45,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/", async (req, res) => {
+app.get("/", async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT m.id, m.title, m.text, m.time, u.username AS author
