@@ -6,7 +6,7 @@ const LocalStrategy = require("passport-local").Strategy;
 const bcrypt = require("bcryptjs");
 const flash = require("connect-flash");
 const PgSession = require("connect-pg-simple")(session);
-const { pool } = require("./config/create_tables");
+const pool = require("./config/create_tables");
 require("dotenv").config();
 const { body, validationResult } = require("express-validator");
 

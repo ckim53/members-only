@@ -39,3 +39,5 @@ async function run() {
 }
 
 run();
+
+module.exports = pool;
