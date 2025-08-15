@@ -45,9 +45,23 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/", (req, res) => {
-  res.render("index", { user: req.user });
+app.get("/", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT m.title, m.text, m.time, u.username AS author
+      FROM messages m
+      JOIN authors a ON m.id = a.message_id
+      JOIN users u ON a.author_id = u.id`
+    );
+    const display = req.isAuthenticated()
+      ? rows
+      : rows.map((m) => ({ title: m.title, text: m.text }));
+    res.render("index", { messages: display });
+  } catch (err) {
+    next(err);
+  }
 });
+
 app.get("/sign-up", (req, res) =>
   res.render("sign-up-form", { errors: {}, data: {} })
 );
@@ -156,6 +170,29 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/new-message", (req, res) => {
+  res.render("new-message");
+});
+
+app.post("/new-message", async (req, res) => {
+  const { title, text } = req.body;
+  try {
+    console.log("querying now...");
+    await pool.query(
+      `WITH new_msg AS (INSERT INTO messages (title, text) 
+    VALUES ($1, $2) RETURNING id) 
+    INSERT INTO authors (author_id, message_id) 
+    VALUES ($3, (SELECT id FROM new_msg));`,
+      [title, text, req.user.id]
+    );
+    res.redirect("/");
+  } catch (err) {
+    console.error("new-message error:", err);
+    req.flash("error", "Could not post message.");
+    return res.redirect("/new-message");
+  }
+});
+
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
@@ -173,11 +210,15 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
+app.get("/log-in", (req, res) => {
+  res.render("log-in");
+});
+
 app.post(
   "/log-in",
   passport.authenticate("local", {
     successRedirect: "/",
-    failureRedirect: "/",
+    failureRedirect: "/log-in",
     failureFlash: true,
   })
 );

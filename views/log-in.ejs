@@ -1,0 +1,16 @@
+<% if (errorMessages && errorMessages.length) { %>
+<div class="error"><%= errorMessages[0] %></div>
+<% } %>
+<h1>Log In</h1>
+<form action="/log-in" method="POST">
+  <label for="username">Username</label>
+  <input
+    id="username"
+    name="username"
+    placeholder="username"
+    type="text"
+  /><br />
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password" placeholder="password" />
+  <button type="submit">Log In</button>
+</form>
