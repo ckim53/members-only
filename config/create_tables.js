@@ -1,14 +1,20 @@
 require("dotenv").config();
-const { Pool } = require("pg");
+const { Client } = require("pg");
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+const client = new Client({
+  connectionString:
+    "postgresql://" +
+    process.env.DB_USER +
+    ":" +
+    process.env.DB +
+    "@localhost:5432/" +
+    process.env.DB_NAME,
 });
 
 async function run() {
   try {
-    await pool.query(`
+    await client.connect();
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username VARCHAR(50) UNIQUE NOT NULL,
@@ -29,15 +35,11 @@ async function run() {
         message_id INTEGER REFERENCES messages(id) ON DELETE CASCADE
       );
     `);
-
+    await client.end();
     console.log("Tables created");
   } catch (e) {
     console.error("Migration failed:", e);
-  } finally {
-    await pool.end();
   }
 }
 
 run();
-
-module.exports = pool;
